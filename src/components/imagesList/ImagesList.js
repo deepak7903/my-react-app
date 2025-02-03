@@ -52,7 +52,7 @@ export const ImagesList = ({ albumId, albumName, onBack }) => {
 
   useEffect(() => {
     getImages();
-  }, []);
+  }, [albumId]);
 
   const [addImageIntent, setAddImageIntent] = useState(false);
   const [imgLoading, setImgLoading] = useState(false);
@@ -127,12 +127,24 @@ export const ImagesList = ({ albumId, albumName, onBack }) => {
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
+    
+    // Add confirmation dialog
+    const confirmDelete = window.confirm("Are you sure you want to delete this image?");
+    if (!confirmDelete) return;
 
-    await deleteDoc(doc(db, "albums", albumId, "images", id));
-    const filteredImages = images.filter((i) => i.id !== id);
-    setImages(filteredImages);
-
-    toast.success("Image deleted successfully.");
+    try {
+      setLoading(true); // Show loading state while deleting
+      await deleteDoc(doc(db, "albums", albumId, "images", id));
+      
+      // Update state only after successful deletion
+      setImages(prevImages => prevImages.filter(img => img.id !== id));
+      toast.success("Image deleted successfully.");
+    } catch (error) {
+      toast.error("Failed to delete image. Please try again.");
+      console.error("Delete error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!images.length && !searchInput.current?.value && !loading) {
@@ -249,6 +261,7 @@ export const ImagesList = ({ albumId, albumName, onBack }) => {
                   activeHoverImageIndex === i && styles.active
                 }`}
                 onClick={(e) => handleDelete(e, image.id)}
+                title="Delete image"
               >
                 <img src="/assets/trash-bin.png" alt="delete" />
               </div>

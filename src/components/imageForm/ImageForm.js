@@ -35,7 +35,7 @@ export const ImageForm = ({
     if (updateIntent) {
       handleDefaultValues();
     }
-  }, [updateIntent]);
+  }, [updateIntent, handleDefaultValues]); // Add handleDefaultValues as dependency
 
   return (
     <div className={styles.imageForm}>

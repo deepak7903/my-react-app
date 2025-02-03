@@ -3,6 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: aqua;
 }
 
 .top {
@@ -20,7 +21,7 @@
 .top button {
   border: none;
   outline: none;
-  padding: 5px 10px;
+  padding: 3px 6px;
   border-radius: 5px;
   font-weight: 700;
   color: rgb(0, 119, 255);

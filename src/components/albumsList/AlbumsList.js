@@ -18,9 +18,8 @@ import { doc} from "firebase/firestore";
 // components imports
 import { AlbumForm } from "../albumForm/AlbumForm";
 import { ImagesList } from "../imagesList/ImagesList";
-
-// mock data
-// import { albumsData } from "../../static/mock";
+import { PhotoUploader } from "../photoUploader/PhotoUploader";
+import { GalleryGrid } from "../galleryGrid/GalleryGrid";
 
 export const AlbumsList = () => {
   const [albums, setAlbums] = useState([]);
@@ -38,15 +37,10 @@ export const AlbumsList = () => {
       id: doc.id,
       ...doc.data(),
     }));
-    // deleteentry(albumsData)
 
     setAlbums(albumsData);
     setLoading(false);
-    // deleteentry();
   };
-  const deleteentry = async (id) => { 
-      await deleteDoc(doc(db, "albums", `${id}`));
-  }
 
   
   useEffect(() => {
@@ -77,6 +71,39 @@ export const AlbumsList = () => {
 
   const handleBack = () => setActiveAlbum(null);
 
+  const handleDeleteAlbum = async (e, albumId, albumName) => {
+    e.stopPropagation(); // Prevent album opening when clicking delete
+
+    // Confirm deletion
+    const confirmDelete = window.confirm(`Are you sure you want to delete "${albumName}" and all its images?`);
+    if (!confirmDelete) return;
+
+    try {
+      setLoading(true);
+      
+      // First, delete all images in the album
+      const imagesRef = collection(db, "albums", albumId, "images");
+      const imagesSnapshot = await getDocs(imagesRef);
+      
+      const deletePromises = imagesSnapshot.docs.map(doc => 
+        deleteDoc(doc.ref)
+      );
+      await Promise.all(deletePromises);
+
+      // Then delete the album itself
+      await deleteDoc(doc(db, "albums", albumId));
+      
+      // Update state to remove deleted album
+      setAlbums(prevAlbums => prevAlbums.filter(album => album.id !== albumId));
+      toast.success("Album deleted successfully");
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete album. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (albums.length === 0 && !loading) {
     return (
       <>
@@ -106,7 +133,7 @@ export const AlbumsList = () => {
       {!activeAlbum && (
         <div>
           <div className={styles.top}>
-            <h3>Your albums</h3>
+            <h3>My Photo Collections</h3>
             <button
               className={`${createAlbumIntent && styles.active}`}
               onClick={() => setCreateAlbumIntent(!createAlbumIntent)}
@@ -121,6 +148,13 @@ export const AlbumsList = () => {
                 className={styles.album}
                 onClick={() => handleClick(album.name)}
               >
+                <div 
+                  className={styles.deleteAlbum}
+                  onClick={(e) => handleDeleteAlbum(e, album.id, album.name)}
+                  title="Delete album"
+                >
+                  <img src="/assets/trash-bin.png" alt="delete" />
+                </div>
                 <img src="/assets/photos.png" alt="images" />
                 <span>{album.name}</span>
               </div>
